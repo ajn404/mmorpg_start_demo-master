@@ -1,5 +1,10 @@
 import { Singleton } from "../common/base";
-import { getProtoPathByRpcFunc, RpcFunc, ProtoPathEnum, ServerPort } from "../common";
+import {
+  getProtoPathByRpcFunc,
+  RpcFunc,
+  ProtoPathEnum,
+  ServerPort,
+} from "../common";
 // @ts-ignore
 import protoRoot from "../proto/index.js";
 
@@ -52,8 +57,11 @@ export default class NetworkManager extends Singleton {
       this.ws.onmessage = (e) => {
         try {
           // TODO解析data和name
-          const data = e.data;
-          const name = 1;
+          //   const data = e.data;
+          //   const name = 1;
+          console.log(e.data);
+
+          const { name, data } = JSON.parse(e.data);
           try {
             if (this.maps.has(name) && this.maps.get(name).length) {
               this.maps.get(name).forEach(({ cb, ctx }) => cb.call(ctx, data));
@@ -99,6 +107,11 @@ export default class NetworkManager extends Singleton {
 
   async send(name: RpcFunc, data: IData) {
     // TODO
+    const sendObj = {
+      name,
+      data,
+    };
+    this.ws.send(JSON.stringify(sendObj));
   }
 
   listen(name: RpcFunc, cb: (args: any) => void, ctx: unknown) {

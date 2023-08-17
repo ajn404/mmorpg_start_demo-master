@@ -1,1 +1,3 @@
-console.log("gateway 服务");
+import { GatewayManager } from "./gatewayManager";
+
+GatewayManager.Instance.init();
