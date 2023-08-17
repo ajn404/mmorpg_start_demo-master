@@ -4,15 +4,23 @@ import bodyParser from "body-parser";
 //@ts-ignore
 import Crypt from "node-jsencrypt";
 import { createHash } from "crypto";
-import { PrivateKey } from "../common";
+import {
+  AuthService,
+  CheckTokenRes,
+  CheckTokenResData,
+  PrivateKey,
+} from "../common";
 
 import mysql from "mysql";
 import dayjs from "dayjs";
 
 import { v4 as uuidv4 } from "uuid";
 
+import * as grpc from "@grpc/grpc-js";
+
 const cache = new Map();
 
+//数据库连接
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -109,5 +117,35 @@ app.post("/login", function (req, res) {
   });
 });
 
-app.listen(3001);
-console.log("server is running on 3001");
+const port = 3001;
+app.listen(port);
+console.log(`auth server is running on ${port}`);
+
+//grpc
+
+const server = new grpc.Server();
+server.addService(AuthService, {
+  checkToken(call: any, callback: any) {
+    const token = call.request.getToken();
+    const res = new CheckTokenRes();
+
+    if (cache.has(token)) {
+      const data = new CheckTokenResData();
+      data.setAccount(cache.get(token));
+      res.setData(data);
+    } else {
+      res.setError("token is not exist");
+    }
+
+    callback(null, res);
+  },
+});
+
+server.bindAsync(
+  "localhost:3333",
+  grpc.ServerCredentials.createInsecure(),
+  () => {
+    server.start();
+    console.log("RPC服务启动");
+  }
+);
